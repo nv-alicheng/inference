@@ -10,13 +10,8 @@
 
 
 Please see the [new docs site](https://docs.mlcommons.org/inference/benchmarks/language/mixtral-8x7b) for an automated way to run this benchmark across different available implementations and do an end-to-end submission with or without docker.
- 
-## Prepare environment
 
-Copy the mlperf.conf file to this folder.
-```
-cp ../../mlperf.conf .
-```
+## Prepare environment
 
 For a CPU-only run:
 
@@ -104,13 +99,15 @@ sudo -v ; curl https://rclone.org/install.sh | sudo bash
 ```
 Once Rclone is installed, cd into the folder where you want to place the dataset and run:
 ```bash
-rclone copyurl https://inference.mlcommons-storage.org/mixtral_8x7b%2F2024.06.06_mixtral_15k_v4.pkl ./ -a -P
+rclone copyurl https://inference.mlcommons-storage.org/mixtral_8x7b/09292024_mixtral_15k_mintoken2_v1.pkl ./ -a -P
 ```
 #### Using wget
 
 Alternatively, you can simply cd into the folder where you want to place the dataset and run
+
+
 ```bash
-wget https://inference.mlcommons-storage.org/mixtral_8x7b%2F2024.06.06_mixtral_15k_v4.pkl
+wget https://inference.mlcommons-storage.org/mixtral_8x7b/09292024_mixtral_15k_mintoken2_v1.pkl
 ```
 
 ### Calibration dataset
@@ -134,7 +131,6 @@ wget https://inference.mlcommons-storage.org/mixtral_8x7b%2F2024.06.06_mixtral_1
 ```
 python -u main.py --scenario Offline \
                 --model-path ${CHECKPOINT_PATH} \
-                --mlperf-conf mlperf.conf \
                 --user-conf user.conf \
                 --total-sample-count 15000 \
                 --device cpu \
@@ -147,7 +143,6 @@ For a GPU-based run:
 ```
 python3 -u main.py --scenario Offline \
         --model-path ${CHECKPOINT_PATH} \
-        --mlperf-conf mlperf.conf \
         --user-conf user.conf \
         --total-sample-count 15000 \
         --dataset-path ${DATASET_PATH} \
@@ -160,7 +155,6 @@ python3 -u main.py --scenario Offline \
 ```
 python -u main.py --scenario Server \
                 --model-path ${CHECKPOINT_PATH} \
-                --mlperf-conf mlperf.conf \
                 --user-conf user.conf \
                 --total-sample-count 15000 \
                 --device cpu \
@@ -182,7 +176,6 @@ mkdir -p "run_outputs"  # The script will dump all the outputs to 'run_outputs'.
 python -u main.py --scenario Offline \
                 --model-path ${CHECKPOINT_PATH} \
                 --accuracy \
-                --mlperf-conf mlperf.conf \
                 --user-conf user.conf \
                 --total-sample-count 15000 \
                 --dataset-path ${DATASET_PATH} \
@@ -219,7 +212,6 @@ OUTPUT_LOG_DIR=server-accuracy-logs
 python -u main.py --scenario Server \
                 --model-path ${CHECKPOINT_PATH} \
                 --accuracy \
-                --mlperf-conf mlperf.conf \
                 --user-conf user.conf \
                 --total-sample-count 15000 \
                 --dataset-path ${DATASET_PATH} \
@@ -242,11 +234,11 @@ Recreating the enviroment for evaluating the quality metrics can be quite tediou
 ```bash
 docker build . -f Dockerfile.eval -t evaluation
 ```
-2. Run the docker in interactive mode and with 
+2. Run the docker in interactive mode and with
 ```bash
-sudo docker run -it -v $(pwd):/eval -t evaluation
+docker run -it --rm --net=host --runtime=nvidia --ipc=host -v $PWD:$PWD -w $PWD evaluation
 ```
-3. 
+3.
 ```bash
 cd eval
 python -u evaluate-accuracy.py --checkpoint-path [path_to_model_checkpoint] \
@@ -261,17 +253,17 @@ python -u evaluate-accuracy.py --checkpoint-path [path_to_model_checkpoint] \
 Reference scores:
 Open Orca:
 ```json
-{'rouge1': 45.4911, 'rouge2': 23.2829, 'rougeL': 30.3615}
+{'rouge1': 45.5989, 'rouge2': 23.3526, 'rougeL': 30.4608}
 ```
 GSM8K:
 ```json
-{'gsm8k': 73.78}
+{'gsm8k': 73.66}
 ```
 MBXP:
 ```json
-{'mbxp': 60.12}
+{'mbxp': 60.16}
 ```
-For official submissions, 99% of each reference score is enforced. Additionally, 90%-110% of the generated tokens_per_samples:
+For official submissions, 99% of each reference score is enforced. Additionally, 90%-110% of the generated tokens_per_samples (counting all the non-EOS tokens):
 ```json
-{'tokens_per_sample': 145.9}
+{'tokens_per_sample': 144.84}
 ```
